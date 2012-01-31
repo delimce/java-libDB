@@ -33,7 +33,7 @@ public class Database {
     private String dbpass = "delimce";
     
     private String dbname = "cip_corpoelec";
-    private String dbport = "5432"; //CASO PG, oracle
+    private String dbport = "5432"; //CASO PG, oracle mssql
     private String dbms = "PGSQL";
     private String dbservice = "";
     //////////////////////////////////////////////////
@@ -45,7 +45,7 @@ public class Database {
     private static int nconexiones; ////numero de conexiones existentes a la base de datos
 
     
-    /*
+    /**
      * lectura de los parametros de conexion de un archivo externo 
      * el archivo debe existir en la raiz del proyecto y ser .property, si no existe toma los parametros por defecto
      * 
@@ -108,10 +108,12 @@ public class Database {
         
         try {
             
-            if (this.dbms.equals("oracle")) ///oracle
+            if (this.dbms.toLowerCase().equals("oracle")) ///oracle
             Class.forName ("oracle.jdbc.OracleDriver");
-            else if(this.dbms.equals("mysql")) ///mysql
+            else if(this.dbms.toLowerCase().equals("mysql")) ///mysql
             Class.forName("com.mysql.jdbc.Driver");
+            else if(this.dbms.toLowerCase().equals("mssql")) ///sql server
+            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
             else ///postgresql
             Class.forName("org.postgresql.Driver");    
                 
@@ -123,12 +125,15 @@ public class Database {
         try {
 
             ////estableciendo conexion a la base de datos
-            if (this.dbms.equals("mysql")) {
+            if (this.dbms.toLowerCase().equals("mysql")) {
                 this.dbc = DriverManager.getConnection("jdbc:mysql://" + this.dbserver + "/" + this.dbname, this.dbuser, this.dbpass);
-            } else if(this.dbms.equals("oracle")) {
+            } else if(this.dbms.toLowerCase().equals("oracle")) {
                
                 this.dbc =  DriverManager.getConnection ("jdbc:oracle:oci8:@BDDESA","providencia","providencia");
-             
+             } else if(this.dbms.toLowerCase().equals("mssql")) {
+                
+                this.dbc = DriverManager.getConnection("jdbc:sqlserver://" + this.dbserver + ":" + this.dbport + ";databaseName=" + this.dbname + ";user=" + this.dbuser + ";password=" + this.dbpass);
+                
             } else {
                 this.dbc = DriverManager.getConnection("jdbc:postgresql://" + this.dbserver + ":" + this.dbport + "/" + this.dbname, this.dbuser, this.dbpass);
             }

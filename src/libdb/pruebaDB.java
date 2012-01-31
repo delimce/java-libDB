@@ -24,11 +24,15 @@ public class pruebaDB {
             ObjetoDB db = new ObjetoDB();
             db.leerConfig("dbconfig.properties");
             db.conectar();
-            db.prepararSQL("select * from tbl_estudiante");
+            
+           
+            db.prepararSQL("select * from DP_USERS");
             db.query();
             Map resultado = db.simple_db();
          
-            System.out.println("resultado: "+resultado.get("nombre").toString());
+            System.out.println("resultado: "+resultado.get("NAME").toString());
+           
+            
         } catch (SQLException ex) {
             Logger.getLogger(pruebaDB.class.getName()).log(Level.SEVERE, null, ex);
         }
