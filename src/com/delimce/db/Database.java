@@ -114,6 +114,8 @@ public class Database {
             Class.forName("com.mysql.jdbc.Driver");
             else if(this.dbms.toLowerCase().equals("mssql")) ///sql server
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+            else if(this.dbms.toLowerCase().equals("derby")) ///apache derby forma embebida
+            Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
             else ///postgresql
             Class.forName("org.postgresql.Driver");    
                 
@@ -133,6 +135,10 @@ public class Database {
              } else if(this.dbms.toLowerCase().equals("mssql")) {
                 
                 this.dbc = DriverManager.getConnection("jdbc:sqlserver://" + this.dbserver + ":" + this.dbport + ";databaseName=" + this.dbname + ";user=" + this.dbuser + ";password=" + this.dbpass);
+            
+             } else if(this.dbms.toLowerCase().equals("derby")) {
+                
+                this.dbc = DriverManager.getConnection("jdbc:derby:" + this.dbname + ";user=" + this.dbuser + ";password=" + this.dbpass);    
                 
             } else {
                 this.dbc = DriverManager.getConnection("jdbc:postgresql://" + this.dbserver + ":" + this.dbport + "/" + this.dbname, this.dbuser, this.dbpass);

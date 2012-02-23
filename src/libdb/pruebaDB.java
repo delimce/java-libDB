@@ -20,18 +20,22 @@ public class pruebaDB {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        try {
-            ObjetoDB db = new ObjetoDB();
+        
+        ObjetoDB db = new ObjetoDB();
             db.leerConfig("dbconfig.properties");
             db.conectar();
+        
+        try {
+            
             
            
-            db.prepararSQL("select * from DP_USERS");
+            db.prepararSQL("select * from usuario ");
             db.query();
+            
+            if(db.getNreg()>0){
             Map resultado = db.simple_db();
-         
-            System.out.println("resultado: "+resultado.get("NAME").toString());
-           
+            System.out.println("resultado: "+resultado.get("NOMBRE").toString());
+            }
             
         } catch (SQLException ex) {
             Logger.getLogger(pruebaDB.class.getName()).log(Level.SEVERE, null, ex);
