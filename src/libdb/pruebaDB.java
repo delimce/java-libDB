@@ -20,7 +20,7 @@ public class pruebaDB {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        
+        System.out.println("Cambio");
         ObjetoDB db = new ObjetoDB();
             db.leerConfig("dbconfig.properties");
             db.conectar();
