@@ -131,7 +131,8 @@ public class Database {
                 this.dbc = DriverManager.getConnection("jdbc:mysql://" + this.dbserver + "/" + this.dbname, this.dbuser, this.dbpass);
             } else if(this.dbms.toLowerCase().equals("oracle")) {
                
-                this.dbc =  DriverManager.getConnection ("jdbc:oracle:oci8:@BDDESA","providencia","providencia");
+                //this.dbc =  DriverManager.getConnection ("jdbc:oracle:oci8:@BDDESA","providencia","providencia");
+                this.dbc = DriverManager.getConnection("jdbc:oracle:thin:@" + this.dbserver +":"+this.dbport+":"+this.dbservice,this.dbuser,this.dbpass);
              } else if(this.dbms.toLowerCase().equals("mssql")) {
                 
                 this.dbc = DriverManager.getConnection("jdbc:sqlserver://" + this.dbserver + ":" + this.dbport + ";databaseName=" + this.dbname + ";user=" + this.dbuser + ";password=" + this.dbpass);

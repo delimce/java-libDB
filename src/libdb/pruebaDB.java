@@ -29,12 +29,12 @@ public class pruebaDB {
             
             
            
-            db.prepararSQL("select * from usuario ");
+            db.prepararSQL("select * from TST_AUTOMOVIL ");
             db.query();
             
             if(db.getNreg()>0){
             Map resultado = db.simple_db();
-            System.out.println("resultado: "+resultado.get("NOMBRE").toString());
+            System.out.println("resultado: "+resultado.get("MARCA").toString());
             }
             
         } catch (SQLException ex) {
