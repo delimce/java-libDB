@@ -4,87 +4,89 @@
  */
 package com.delimce.db;
 
-
 import java.io.FileInputStream;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.io.IOException;
+import java.sql.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
-import java.util.Properties;
-
 
 /**
- *
  * @author Administrador
  */
-public class Database {
+abstract class Database {
 
-    //////////////////////VARIABLES PARA LA CONEXION
-//    private String dbserver = "10.16.44.139";
-//    private String dbuser = "postgres";
-//    private String dbpass = "12345";
-//    
-    private String dbserver = "localhost";
-    private String dbuser = "postgres";
-    private String dbpass = "delimce";
-    
-    private String dbname = "cip_corpoelec";
-    private String dbport = "5432"; //CASO PG, oracle mssql
-    private String dbms = "PGSQL";
-    private String dbservice = "";
+    private static int nconexiones; ////numero de conexiones existentes a la base de datos
     //////////////////////////////////////////////////
     protected int nreg;
     protected long ultimoID;
     protected Connection dbc;
+    /////////////////////////////////////prepared vars
+    protected PreparedStatement pstmt;
+    //////////////////////VARIABLES PARA LA CONEXION
+//    private String dbserver = "10.16.44.139";
+//    private String dbuser = "postgres";
+//    private String dbpass = "12345";
+//
+    private String dbserver;
+    private String dbuser;
+    private String dbpass;
+    private String dbname;
+    private String dbport; //CASO PG, oracle mssql
+    private String dbms;
+    private String dbservice; ////caso ORACLE thin
     private Statement stmt;
-    public ResultSet result;
-    private static int nconexiones; ////numero de conexiones existentes a la base de datos
+    private ResultSet result;
+    private HashMap<String, String> dbConfigParams = new HashMap<>();
 
-    
     /**
-     * lectura de los parametros de conexion de un archivo externo 
-     * el archivo debe existir en la raiz del proyecto y ser .property, si no existe toma los parametros por defecto
-     * 
+     * devuelve el numero de conexiones hechas con la clase Database
+     *
+     * @return
      */
-    
-    public void leerConfig(String archivo) {
+    public static int getNcons() {
+        return nconexiones;
+    }
+
+    /**
+     * lectura de los parametros de conexion de un archivo externo el archivo
+     * debe existir en la raiz del proyecto y ser .property, si no existe toma
+     * los parametros por defecto
+     */
+    public void getConfig(String archivo) {
 
         try {
             //se crea una instancia a la clase Properties
             Properties propiedades = new Properties();
             //se leen el archivo .properties
-            
-            try{
-                
-             propiedades.load(new FileInputStream(archivo));
-             
-             
-            }catch (NullPointerException e2){
-                
+
+            try {
+
+                propiedades.load(new FileInputStream(archivo));
+
+            } catch (NullPointerException e2) {
+
                 System.out.println("No es posible leer el archivo de propiedades de conexion \n " + e2);
-                
+
             }
-             
+
             //si el archivo de propiedades NO esta vacio retornan las propiedes leidas
             if (!propiedades.isEmpty()) {
-                
+
                 this.dbms = propiedades.getProperty("dbms").trim(); ///motor de base de datos a usar Mysql, Postgres u Oracle
                 this.dbserver = propiedades.getProperty("dbserver").trim(); ////nombre o ip del servidor
                 this.dbname = propiedades.getProperty("dbname").trim(); ///nombre de la base de datos
                 this.dbuser = propiedades.getProperty("dbuser").trim(); ///usuario de la db
                 this.dbpass = propiedades.getProperty("dbpass").trim(); ///password de la db
-                
-                  
-                if(!propiedades.getProperty("dbport").trim().isEmpty())
+
+                if (!propiedades.getProperty("dbport").trim().isEmpty()) {
                     this.dbport = propiedades.getProperty("dbport").trim(); ///puerto
-                
-                if(!propiedades.getProperty("dbservice").trim().isEmpty())
+                }
+                if (!propiedades.getProperty("dbservice").trim().isEmpty()) {
                     this.dbservice = propiedades.getProperty("dbservice").trim(); ///SID oracle
-                
+                }
             } else {//sino  retornara NULL
                 System.out.print("el archivo esta vacio: " + archivo);
             }
@@ -93,56 +95,62 @@ public class Database {
         }
     }
 
-    
-    
+    public void setConfig() {
+
+        //si el archivo de propiedades NO esta vacio retornan las propiedes leidas
+        this.dbms = dbConfigParams.get("dbms"); ///motor de base de datos a usar Mysql, Postgres u Oracle
+        this.dbserver = dbConfigParams.get("dbserver"); ////nombre o ip del servidor
+        this.dbname = dbConfigParams.get("dbname"); ///nombre de la base de datos
+        this.dbuser = dbConfigParams.get("dbuser"); ///usuario de la db
+        this.dbpass = dbConfigParams.get("dbpass"); ///password de la db
+
+        if (!dbConfigParams.get("dbport").trim().isEmpty()) {
+            this.dbport = dbConfigParams.get("dbport").trim(); ///puerto
+        }
+        if (!dbConfigParams.get("dbservice").trim().isEmpty()) {
+            this.dbservice = dbConfigParams.get("dbservice").trim(); ///SID oracle
+        }
+
+    }
+
     /**
-     * metodo que realiza la conexion a la base de datos
-     * hasta la fecha la conexion es con mysql,oracle y por defecto postgres
+     * metodo que realiza la conexion a la base de datos hasta la fecha la
+     * conexion es con mysql,oracle y por defecto postgres
      */
-    
-    public void conectar() {
+    public void connect() {
 
         this.dbc = null;
-        
-   
-        
-        try {
-            
-            if (this.dbms.toLowerCase().equals("oracle")) ///oracle
-            Class.forName ("oracle.jdbc.OracleDriver");
-            else if(this.dbms.toLowerCase().equals("mysql")) ///mysql
-            Class.forName("com.mysql.jdbc.Driver");
-            else if(this.dbms.toLowerCase().equals("mssql")) ///sql server
-            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-            else if(this.dbms.toLowerCase().equals("derby")) ///apache derby forma embebida
-            Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
-            else ///postgresql
-            Class.forName("org.postgresql.Driver");    
-                
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, "No se encuentra el driver de conexion necesario: "+ex);
-        }
-        
-        
+
         try {
 
-            ////estableciendo conexion a la base de datos
-            if (this.dbms.toLowerCase().equals("mysql")) {
-                this.dbc = DriverManager.getConnection("jdbc:mysql://" + this.dbserver + "/" + this.dbname, this.dbuser, this.dbpass);
-            } else if(this.dbms.toLowerCase().equals("oracle")) {
-               
-                //this.dbc =  DriverManager.getConnection ("jdbc:oracle:oci8:@BDDESA","providencia","providencia");
-                this.dbc = DriverManager.getConnection("jdbc:oracle:thin:@" + this.dbserver +":"+this.dbport+":"+this.dbservice,this.dbuser,this.dbpass);
-             } else if(this.dbms.toLowerCase().equals("mssql")) {
-                
-                this.dbc = DriverManager.getConnection("jdbc:sqlserver://" + this.dbserver + ":" + this.dbport + ";databaseName=" + this.dbname + ";user=" + this.dbuser + ";password=" + this.dbpass);
-            
-             } else if(this.dbms.toLowerCase().equals("derby")) {
-                
-                this.dbc = DriverManager.getConnection("jdbc:derby:" + this.dbname + ";user=" + this.dbuser + ";password=" + this.dbpass);    
-                
-            } else {
-                this.dbc = DriverManager.getConnection("jdbc:postgresql://" + this.dbserver + ":" + this.dbport + "/" + this.dbname, this.dbuser, this.dbpass);
+            switch (this.dbms.toLowerCase()) {
+                case "oracle":
+                    Class.forName("oracle.jdbc.OracleDriver");
+                    //this.dbc =  DriverManager.getConnection ("jdbc:oracle:oci8:@BDDESA","providencia","providencia");
+                    this.dbc = DriverManager.getConnection("jdbc:oracle:thin:@" + this.dbserver + ":" + this.dbport + ":" + this.dbservice, this.dbuser, this.dbpass);
+                    break;
+
+                case "mysql":
+                    Class.forName("com.mysql.jdbc.Driver");
+                    this.dbc = DriverManager.getConnection("jdbc:mysql://" + this.dbserver + "/" + this.dbname, this.dbuser, this.dbpass);
+                    break;
+                case "mssql":
+                    Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+                    this.dbc = DriverManager.getConnection("jdbc:sqlserver://" + this.dbserver + ":" + this.dbport + ";databaseName=" + this.dbname + ";user=" + this.dbuser + ";password=" + this.dbpass);
+                    break;
+
+                case "pgsql":
+                    Class.forName("org.postgresql.Driver");
+                    this.dbc = DriverManager.getConnection("jdbc:postgresql://" + this.dbserver + ":" + this.dbport + "/" + this.dbname, this.dbuser, this.dbpass);
+                    break;
+
+                default: ///apache derby
+
+                    Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
+                    this.dbc = DriverManager.getConnection("jdbc:derby:" + this.dbname + ";user=" + this.dbuser + ";password=" + this.dbpass);
+
+                    break;
+
             }
 
             ///////////crea el objeto statement para realizar querys
@@ -150,40 +158,28 @@ public class Database {
             //////setea las transacciones para que sean por sentencia
             this.dbc.setAutoCommit(true);
 
-
-        } catch (SQLException ex) {
-            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException | SQLException e ) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, "No se encuentra el driver de conexion necesario: " + e);
+                   
         }
 
     }
 
-
-    /**
-     * devuelve el numero de conexiones hechas con la clase Database
-     * @return
-     */
-
-    public static int getNconexiones() {
-        return nconexiones;
-    }
-
-
-    public void cerrar() {
+    public void close() {
         try {
             this.dbc.close();
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-
     }
 
-    /** metodo que ejecuta un query T eje: insert, update delete ..
-     *
+    /**
+     * metodo que ejecuta un query T eje: insert, update delete ..
      */
     public void tquery(String sql) throws SQLException {
-      
-         this.stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
+
+        this.stmt.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
 
         this.result = this.stmt.getGeneratedKeys();
 
@@ -191,47 +187,34 @@ public class Database {
             this.ultimoID = this.result.getLong(1);
         }
 
-
-   
-
     }
 
-    /** metodo que ejecuta un query sencillo ejemplo: select ..
-     *
+    /**
+     * metodo que ejecuta un query sencillo ejemplo: select ..
      */
     public void query(String sql) throws SQLException {
-       
-            this.stmt.executeQuery(sql);
-            ///numero de registros
-            this.result = this.stmt.getResultSet();
-            this.result.last();
-            this.nreg = this.result.getRow();
 
-            this.result.beforeFirst();
+        this.stmt.executeQuery(sql);
+        ///numero de registros
+        this.result = this.stmt.getResultSet();
+        this.result.last();
+        this.nreg = this.result.getRow();
 
-
-
-     
-
-
+        this.result.beforeFirst();
 
     }
-
-
 
     /**
      * Metodo que ejecuta una consulta sql diferente a insert,select,update
-     *
      */
+    public void execute(String sql) throws SQLException {
 
-    public void ejecutar(String sql) throws SQLException{
-       
-            this.stmt.execute(sql);
-      
+        this.stmt.execute(sql);
 
     }
 
-    /**trae el numero de filas q devuelve el query
+    /**
+     * trae el numero de filas q devuelve el query
      *
      * @return
      */
@@ -244,10 +227,18 @@ public class Database {
         return ultimoID;
     }
 
-    /**libera una conexion tanto stmt y resulset
-     *
+    public ResultSet getResult() {
+        return result;
+    }
+
+    public void setResult(ResultSet result) {
+        this.result = result;
+    }
+
+    /**
+     * libera una conexion tanto stmt y resulset
      */
-    public void liberar() {
+    public void free() {
 
         try {
             this.result.close();
@@ -259,24 +250,23 @@ public class Database {
 
         }
 
-
     }
 
-    /** cierra un objeto de tipo statement
-     * 
+    /**
+     * cierra un objeto de tipo statement
      */
-    public void cerrars() {
+    public void closes() {
         try {
             this.stmt.close();
         } catch (SQLException ex) {
-            Logger.getLogger(SecureDB.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    /** cierra todos los elementos de una conexion
-     *  result, stmt, dbc
+    /**
+     * cierra todos los elementos de una conexion result, stmt, dbc
      */
-    public void cerrarTodo() {
+    public void closeAll() {
         try {
             this.result.close();
             this.stmt.close();
@@ -288,9 +278,9 @@ public class Database {
 
     }
 
-/////////////////////////////////////////metodos para transacciones
+    /////////////////////////////////////////metodos para transacciones
 /////abrir transaccion
-    public void abrir_transaccion() {
+    public void begin_transaccion() {
         try {
             this.dbc.setAutoCommit(false);
         } catch (SQLException ex) {
@@ -299,8 +289,8 @@ public class Database {
 
     }
 
-////pasa el parametro booleano confirmando o no la aplicar cambios o no
-    public void cerrar_transaccion(boolean confirm) {
+    ////pasa el parametro booleano confirmando o no la aplicar cambios o no
+    public void commit_transaccion(boolean confirm) {
 
         try {
             if (confirm) {
@@ -308,13 +298,147 @@ public class Database {
             } else {
                 this.dbc.rollback();
             }
-            
-           this.dbc.setAutoCommit(true); ////setiando autocommit
-            
+
+            this.dbc.setAutoCommit(true); ////setiando autocommit
+
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
 
+    }
+
+    /////////////////////////////////////prepared methods
+    /**
+     * query usado solo para INSERT, update y delete, devuelve el id del ult
+     * registro modificado
+     *
+     * @param query
+     */
+    public void prepareTSQL(String query) {
+
+        try {
+
+            this.pstmt = this.dbc.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS);
+            ///trata de guardar el ultimo id insertado
+
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    /**
+     * usado para SELECT y operaciones que no devuelvan id
+     *
+     * @param query
+     */
+    public void prepareSQL(String query) {
+
+        try {
+
+            this.pstmt = this.dbc.prepareStatement(query, ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    /**
+     * metodos para setiar los valores
+     */
+    public void setString(Integer pos, String Cadena) {
+        try {
+            this.pstmt.setString(pos, Cadena);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void setTimestamp(Integer pos, Date fecha) {
+        try {
+            this.pstmt.setTimestamp(pos, (fecha == null ? null : new java.sql.Timestamp(fecha.getTime())));
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
     }
+
+    public void setInteger(Integer pos, Integer Numero) {
+        try {
+            this.pstmt.setInt(pos, Numero);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void setLong(Integer pos, long Numero) {
+        try {
+            this.pstmt.setLong(pos, Numero);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void setFloat(Integer pos, float Numero) {
+        try {
+            this.pstmt.setFloat(pos, Numero);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void setDoble(Integer pos, double Numero) {
+        try {
+            this.pstmt.setDouble(pos, Numero);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void setDate(Integer pos, Date Fecha) {
+        try {
+            //psInsertar.setDate(pos, (java.sql.Date) Fecha);
+            if (Fecha == null) {
+                this.pstmt.setDate(pos, null);
+            } else {
+                this.pstmt.setDate(pos, new java.sql.Date(Fecha.getTime()));
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void tquery() throws SQLException {
+
+        this.pstmt.executeUpdate();
+        this.result = this.pstmt.getGeneratedKeys();
+
+        if (this.result != null && result.next()) {
+            this.ultimoID = this.result.getLong(1);
+        }
+
+    }
+
+    public void query() throws SQLException {
+
+        this.pstmt.executeQuery();
+        ///numero de registros
+        this.result = this.pstmt.getResultSet();
+        this.result.last();
+        this.nreg = this.result.getRow();
+
+        this.result.beforeFirst();
+
+    }
+
+    /**
+     * cierra un objeto de tipo Pstmt
+     */
+    public void closePrepare() {
+        try {
+            this.pstmt.close();
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
 }

@@ -1,3 +1,5 @@
 /build/
+/.idea/
 /dist/
 /nbproject/
+java-libDB.iml

@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  *
  * @author delimce
  */
-public class ObjetoDB extends SecureDB {
+public class ObjetoDB extends Database {
 
     private ResultSetMetaData rsmd;
 
@@ -30,7 +30,7 @@ public class ObjetoDB extends SecureDB {
     ////constructor con conexion a la base de datos
     public ObjetoDB(String conexion) {
 
-        this.conectar();
+        this.connect();
 
     }
 
@@ -41,15 +41,15 @@ public class ObjetoDB extends SecureDB {
         int i = 0;
         try {
 
-            this.rsmd = (ResultSetMetaData) this.result.getMetaData();
+            this.rsmd = (ResultSetMetaData) this.getResult().getMetaData();
 
-            while (this.result.next()) {
-                data[i] = this.result.getString(this.rsmd.getColumnName(1));
+            while (this.getResult().next()) {
+                data[i] = this.getResult().getString(this.rsmd.getColumnName(1));
                 i++;
             }
 
-            this.liberar(); ///cierra el objeto result (no puede volver a usarse)
-            this.cerrarp();
+            this.free();///cierra el objeto result (no puede volver a usarse)
+            this.closePrepare();
 
         } catch (SQLException ex) {
             Logger.getLogger(ObjetoDB.class.getName()).log(Level.SEVERE, null, ex);
@@ -69,16 +69,16 @@ public class ObjetoDB extends SecureDB {
 
         try {
 
-            this.result.next(); ///si se trajo al menos 1 registro
-            this.rsmd = (ResultSetMetaData) this.result.getMetaData();
+            this.getResult().next(); ///si se trajo al menos 1 registro
+            this.rsmd = (ResultSetMetaData) this.getResult().getMetaData();
             for (int i = 0; i < this.rsmd.getColumnCount(); i++) {
 
-                data.put(this.rsmd.getColumnName(i + 1), this.result.getString(this.rsmd.getColumnName(i + 1)));
+                data.put(this.rsmd.getColumnName(i + 1), this.getResult().getString(this.rsmd.getColumnName(i + 1)));
 
             }
 
-            this.liberar(); ///cierra el objeto result (no puede volver a usarse)
-            this.cerrarp();
+            this.free();///cierra el objeto result (no puede volver a usarse)
+            this.closePrepare();
 
         } catch (SQLException ex) {
             Logger.getLogger(ObjetoDB.class.getName()).log(Level.SEVERE, null, ex);
@@ -102,18 +102,18 @@ public class ObjetoDB extends SecureDB {
         ArrayList lista = new ArrayList();
 
         try {
-            this.rsmd = (ResultSetMetaData) this.result.getMetaData();
+            this.rsmd = (ResultSetMetaData) this.getResult().getMetaData();
 
 
             if (this.getNreg() > 0) {
 
-                while (this.result.next()) {
+                while (this.getResult().next()) {
 
                     Map fila = new HashMap(); ///fila temp que guarda la data de cada registro
 
                     for (int i = 0; i < this.rsmd.getColumnCount(); i++) {
 
-                        fila.put(this.rsmd.getColumnName(i + 1), this.result.getString(this.rsmd.getColumnName(i + 1)));
+                        fila.put(this.rsmd.getColumnName(i + 1), this.getResult().getString(this.rsmd.getColumnName(i + 1)));
 
                     }
 

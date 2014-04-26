@@ -22,14 +22,14 @@ public class pruebaDB {
     public static void main(String[] args) {
         
         ObjetoDB db = new ObjetoDB();
-            db.leerConfig("dbconfig.properties");
-            db.conectar();
+            db.getConfig("dbconfig.properties");
+            db.connect();
         
         try {
             
             
            
-            db.prepararSQL("select * from TST_AUTOMOVIL ");
+            db.prepareSQL("select * from TST_AUTOMOVIL ");
             db.query();
             
             if(db.getNreg()>0){

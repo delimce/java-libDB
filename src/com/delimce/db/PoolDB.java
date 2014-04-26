@@ -39,7 +39,7 @@ public class PoolDB extends ObjetoDB {
      */
     
     @Override
-    public void conectar(){
+    public void connect(){
         try {
             this.dbc = this.ds.getConnection();
         } catch (SQLException ex) {
