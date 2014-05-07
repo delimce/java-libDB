@@ -26,8 +26,7 @@ public class pruebaDB {
             db.connect();
         
         try {
-            
-            
+              
            
             db.prepareSQL("select * from TST_AUTOMOVIL ");
             db.query();
@@ -39,12 +38,13 @@ public class pruebaDB {
             
         } catch (SQLException ex) {
             Logger.getLogger(pruebaDB.class.getName()).log(Level.SEVERE, null, ex);
+        }finally{
+            db.close();
         }
      
         
-        
-        
-        
-        
     }
+    
+    
+    
 }
