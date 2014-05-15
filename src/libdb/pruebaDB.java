@@ -4,9 +4,8 @@
  */
 package libdb;
 
-import com.delimce.db.ObjetoDB;
+import com.delimce.db.HelperDAO;
 import java.sql.SQLException;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,31 +19,25 @@ public class pruebaDB {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        
-        ObjetoDB db = new ObjetoDB();
-            db.getConfig("dbconfig.properties");
-            db.connect();
+
+         HelperDAO hd = new HelperDAO("TST_AUTOMOVIL");
         
         try {
-              
            
-            db.prepareSQL("select * from TST_AUTOMOVIL ");
-            db.query();
-            
-            if(db.getNreg()>0){
-            Map resultado = db.simple_db();
-            System.out.println("resultado: "+resultado.get("MARCA").toString());
-            }
-            
+            hd.setProcedureName("R_PRUEBA_BULK.r_prueba_ejecuta_prc"); ///nombre del stored
+            hd.setInParameter("hola");
+            hd.setInParameter("mundo");
+            hd.setInParameter(123);
+            hd.setOutString();
+            hd.executeProcedure();
+            hd.getString(4);
+
         } catch (SQLException ex) {
             Logger.getLogger(pruebaDB.class.getName()).log(Level.SEVERE, null, ex);
         }finally{
-            db.close();
+            hd.closeCall();
+            hd.close();
         }
-     
-        
+
     }
-    
-    
-    
 }

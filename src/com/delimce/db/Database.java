@@ -6,7 +6,14 @@ package com.delimce.db;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.sql.*;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Properties;
@@ -44,6 +51,7 @@ abstract class Database {
     private String dbPool = ""; ///pool de conexiones en caso de usarlo
     private Statement stmt;
     private ResultSet result;
+    private CallableStatement cstmt = null; ////para llamada de parametros en stored
     private DataSource ds; ///conexion obtenida del pool
     private HashMap<String, String> dbConfigParams = new HashMap<>();
 
@@ -54,6 +62,15 @@ abstract class Database {
      */
     public static int getNcons() {
         return nconexiones;
+    }
+
+    /**
+     * trae el objeto de conexion
+     *
+     * @return
+     */
+    public Connection getDbc() {
+        return dbc;
     }
 
     /**
@@ -361,16 +378,11 @@ abstract class Database {
      *
      * @param query
      */
-    public void prepareTSQL(String query) {
+    public void prepareTSQL(String query) throws SQLException {
 
-        try {
+        this.pstmt = this.dbc.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS);
+        ///trata de guardar el ultimo id insertado
 
-            this.pstmt = this.dbc.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS);
-            ///trata de guardar el ultimo id insertado
-
-        } catch (SQLException ex) {
-            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }
 
     /**
@@ -390,6 +402,31 @@ abstract class Database {
     }
 
     /**
+     * perapra la llamada de un stored procedure con parametros
+     *
+     * @param query
+     */
+    public void prepareCall(String query) {
+        try {
+            this.cstmt = this.dbc.prepareCall(query);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    /**
+     * metodo que ejecuta un objeto Call
+     */
+    public void executeCall() {
+
+        try {
+            this.cstmt.executeUpdate();
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        } 
+    }
+
+    /**
      * metodos para setiar los valores
      */
     public void setString(Integer pos, String Cadena) {
@@ -400,14 +437,36 @@ abstract class Database {
         }
     }
 
-    public String getString(String campo) throws SQLException {
+    public void setStringInParam(Integer pos, String Cadena) {
+        try {
 
-        return this.result.getString(campo);
+            this.cstmt.setString(pos, Cadena);
+
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void setStringOutParam(Integer pos) {
+        try {
+            this.cstmt.registerOutParameter(pos, Types.VARCHAR);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     public void setTimestamp(Integer pos, Date fecha) {
         try {
             this.pstmt.setTimestamp(pos, (fecha == null ? null : new java.sql.Timestamp(fecha.getTime())));
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
+
+    public void setTimestampInParam(Integer pos, Date fecha) {
+        try {
+            this.cstmt.setTimestamp(pos, (fecha == null ? null : new java.sql.Timestamp(fecha.getTime())));
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -422,14 +481,136 @@ abstract class Database {
         }
     }
 
+    public void setIntegerInParam(Integer pos, Integer Numero) {
+        try {
+            this.cstmt.setInt(pos, Numero);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void setIntegerOutParam(Integer pos) {
+        try {
+            this.cstmt.registerOutParameter(pos, Types.INTEGER);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    /**
+     * para el uso de result
+     *
+     * @param campo
+     * @return
+     * @throws SQLException
+     */
+    public String getString(String campo) throws SQLException {
+
+        return this.result.getString(campo);
+    }
+
+    /**
+     * para el uso de stored/function
+     *
+     * @param pos
+     * @return
+     * @throws SQLException
+     */
+    public String getString(int pos) throws SQLException {
+        return this.cstmt.getString(pos);
+    }
+
+    /**
+     * para el uso de result
+     *
+     * @param campo
+     * @return
+     * @throws SQLException
+     */
     public int getInteger(String campo) throws SQLException {
 
         return this.result.getInt(campo);
     }
 
+    /**
+     * para el uso de stored/function
+     *
+     * @param pos
+     * @return
+     * @throws SQLException
+     */
+    public int getInteger(int pos) throws SQLException {
+
+        return this.cstmt.getInt(pos);
+    }
+
+    /**
+     * para el uso de result
+     *
+     * @param campo
+     * @return
+     * @throws SQLException
+     */
+    public float getFloat(String campo) throws SQLException {
+
+        return this.result.getFloat(campo);
+    }
+
+    /**
+     * para el uso de stored/function
+     *
+     * @param pos
+     * @return
+     * @throws SQLException
+     */
+    public float getFloat(int pos) throws SQLException {
+
+        return this.cstmt.getFloat(pos);
+    }
+
+    /**
+     * para el uso de result
+     *
+     * @param campo
+     * @return
+     * @throws SQLException
+     */
+    public double getDouble(String campo) throws SQLException {
+
+        return this.result.getDouble(campo);
+    }
+
+    /**
+     * para el uso de stored/function
+     *
+     * @param pos
+     * @return
+     * @throws SQLException
+     */
+    public double getDouble(int pos) throws SQLException {
+
+        return this.cstmt.getDouble(pos);
+    }
+
     public void setLong(Integer pos, long Numero) {
         try {
             this.pstmt.setLong(pos, Numero);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void setLongInParam(Integer pos, long Numero) {
+        try {
+            this.cstmt.setLong(pos, Numero);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void setLongOutParam(Integer pos) {
+        try {
+            this.cstmt.registerOutParameter(pos, Types.BIGINT);
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -448,9 +629,20 @@ abstract class Database {
         }
     }
 
-    public float getFloat(String campo) throws SQLException {
+    public void setFloatInParam(Integer pos, float Numero) {
+        try {
+            this.cstmt.setFloat(pos, Numero);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 
-        return this.result.getFloat(campo);
+    public void setFloatOutParam(Integer pos) {
+        try {
+            this.cstmt.registerOutParameter(pos, Types.FLOAT);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     public void setDoble(Integer pos, double Numero) {
@@ -461,9 +653,20 @@ abstract class Database {
         }
     }
 
-    public double getDouble(String campo) throws SQLException {
+    public void setDobleInParam(Integer pos, double Numero) {
+        try {
+            this.cstmt.setDouble(pos, Numero);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 
-        return this.result.getDouble(campo);
+    public void setDobleOutParam(Integer pos) {
+        try {
+            this.cstmt.registerOutParameter(pos, Types.DOUBLE);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     public void setDate(Integer pos, Date Fecha) {
@@ -479,12 +682,25 @@ abstract class Database {
         }
     }
 
+    public void setDateInParam(Integer pos, Date Fecha) {
+        try {
+            //psInsertar.setDate(pos, (java.sql.Date) Fecha);
+            if (Fecha == null) {
+                this.cstmt.setDate(pos, null);
+            } else {
+                this.cstmt.setDate(pos, new java.sql.Date(Fecha.getTime()));
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
     public void tquery() throws SQLException {
 
         this.pstmt.executeUpdate();
         this.result = this.pstmt.getGeneratedKeys();
 
-        if (this.result != null && result.next()) {
+        if (this.result != null && result.next()) { ///trata de buscar el ultimo id insertado
             this.ultimoID = this.result.getLong(1);
         }
 
@@ -508,6 +724,14 @@ abstract class Database {
     public void closePrepare() {
         try {
             this.pstmt.close();
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void closeCall() {
+        try {
+            this.cstmt.close();
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
