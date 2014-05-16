@@ -98,7 +98,7 @@ public class HelperDAO extends Database {
      * @param Array The Array to be converted to String
      * @return String
      */
-    public String Join(String glue, List Array) {
+    private String Join(String glue, List Array) {
         String res = "";
         int i = 0;
         for (i = 0; i < Array.size() - 1; i++) {
@@ -117,7 +117,7 @@ public class HelperDAO extends Database {
      * @return String Repeat(", ", "?", 3) = "?, ?" Repeat(", ", "Repeat", 3) =
      * "Repeat, Repeat, Repeat"
      */
-    public String Repeat(String glue, String repeat, Integer count) {
+    private String Repeat(String glue, String repeat, Integer count) {
         String res = "";
         int i = 0;
         for (i = 0; i < count - 1; i++) {
@@ -156,7 +156,7 @@ public class HelperDAO extends Database {
      * @param obj
      * @param pos
      */
-    protected void setObject(Object obj, int pos) {
+    private void setObject(Object obj, int pos) {
 
         if (obj.getClass().equals(String.class)) {
             System.out.println("string");
@@ -181,7 +181,7 @@ public class HelperDAO extends Database {
      * @param obj
      * @param pos
      */
-    protected void setObjectParamIn(Object obj, int pos) {
+    private void setObjectParamIn(Object obj, int pos) {
 
         if (obj.getClass().equals(String.class)) {
             System.out.println("parametro entrada string");
@@ -201,7 +201,7 @@ public class HelperDAO extends Database {
         }
     }
 
-    protected void setObjectParamOut(sqlType type, int pos) {
+    private void setObjectParamOut(sqlType type, int pos) {
 
         if (type == sqlType.STRING) {
             System.out.println("parametro salida string");
@@ -223,7 +223,7 @@ public class HelperDAO extends Database {
      *
      * @param p
      */
-    protected void setObject(Parameter p) {
+    private void setObject(Parameter p) {
         if (p.getType() == typeParam.IN) { //parametro de entrada
             this.setObjectParamIn(p.getValue(), p.getPosition());
 
@@ -239,9 +239,10 @@ public class HelperDAO extends Database {
 
         try {
             String tablename = this.getEntityTable();
-            String sql = "insert into " + tablename + " (" + Join(", ", columns) + ") values (" + Repeat(", ", "?", columns.size()) + ")";
+
+            StringBuilder sql = new StringBuilder("insert into ").append(tablename).append(tablename).append(" (").append(Join(", ", columns)).append(") values (").append(Repeat(", ", "?", columns.size())).append(")");
             System.out.println(sql);
-            prepareTSQL(sql);
+            prepareTSQL(sql.toString());
 
             for (int i = 0; i < columns.size(); i++) {
                 setObject(values.get(i), i + 1);
@@ -264,13 +265,13 @@ public class HelperDAO extends Database {
             }
 
             String tablename = this.getEntityTable();
-            String sql = "delete from " + tablename + " where ";
+            StringBuilder sql = new StringBuilder("delete from ").append(tablename).append(" where ");
             int i;
             for (i = 0; i < columnsWhere.size() - 1; i++) {
-                sql = sql + columnsWhere.get(i) + "=? and "; ///todo: hacer que agrupe por and/or
+                sql.append(columnsWhere.get(i)).append("=? and "); ///todo: hacer que agrupe por and/or
             }
-            sql = sql + columnsWhere.get(i) + "=?";
-            prepareTSQL(sql);
+            sql.append(columnsWhere.get(i)).append("=?");
+            prepareTSQL(sql.toString());
             for (i = 0; i < columnsWhere.size(); i++) {
                 setObject(valuesWhere.get(i), i + 1);
             }
@@ -291,21 +292,23 @@ public class HelperDAO extends Database {
                 return;
             }
             String tablename = this.getEntityTable();
-            String sql = "update " + tablename + " set ";
+            StringBuilder sql = new StringBuilder("update ").append(tablename).append(" set ");
             int i;
             for (i = 0; i < columns.size() - 1; i++) {
-                sql += columns.get(i) + "=?,";
+                sql.append(columns.get(i)).append("=?,");
             }
-            sql += columns.get(i) + "=? where ";
+            sql.append(columns.get(i)).append("=? where ");
             for (i = 0; i < columnsWhere.size() - 1; i++) {
-                sql += columnsWhere.get(i) + "=? and "; ///todo: hacer que agrupe por and/or
+                sql.append(columnsWhere.get(i)).append("=? and "); ///todo: hacer que agrupe por and/or
             }
-            sql += columnsWhere.get(i) + "=?";
+            sql.append(columnsWhere.get(i)).append("=?");
 
             System.out.println(sql);
-            prepareTSQL(sql);
-            /////mexclando vectores de valores para pasar los parametros
-            List<List<Object>> mexcla = asList(this.values, this.valuesWhere);
+            prepareTSQL(sql.toString());
+            /////mexclando vectores de valores para pasar los parametros      
+            List mexcla = new ArrayList(this.values);
+            mexcla.addAll(this.valuesWhere);          
+            
             for (i = 0; i < mexcla.size(); i++) {
                 System.out.println(mexcla.get(i));
                 setObject(mexcla.get(i), i + 1);
@@ -325,8 +328,9 @@ public class HelperDAO extends Database {
      */
     public void executeProcedure() {
 
-        String sql = "{call " + this.getProcedureName() + "(" + Repeat(", ", "?", this.parameters.size()) + ")}";
-        this.prepareCall(sql);
+        StringBuilder sql = new StringBuilder("{call ").append(this.getProcedureName()).append("(").append(Repeat(", ", "?", this.parameters.size())).append(")}");
+        // String sql = "{call " + this.getProcedureName() + "(" + Repeat(", ", "?", this.parameters.size()) + ")}";
+        this.prepareCall(sql.toString());
         for (Parameter parameter : parameters) {
             setObject(parameter);
         }
@@ -334,6 +338,23 @@ public class HelperDAO extends Database {
 
     }
 
+    /**
+     * ejecuta una funcion con los parametros por defecto
+     * el parametro de salida siempre debe ser declarado en primer lugar
+     * con el metodo del tipo que corresponda, luego vendran los para metros de entrada
+     */
+    public void executeFunction(){
+        StringBuilder sql = new StringBuilder("{? = call ").append(this.getFunctionName()).append("(").append(Repeat(", ", "?", this.parameters.size()-1)).append(")}");
+        this.prepareCall(sql.toString());
+        for (Parameter parameter : parameters) {
+            setObject(parameter);
+        }
+        this.executeCall();
+        
+    }
+    
+    
+    
     /**
      * metodo que setea un parametro de ENTRADA para un sp o funcion la llamada
      * de este metodo despues del setProcedureName determina la posicion de los
@@ -405,7 +426,7 @@ public class HelperDAO extends Database {
     }
 
     /////clase interna para el uso de parametros (procedimientos y funciones) 
-    public class Parameter {
+    private class Parameter {
 
         private String name; ///parametro nombre
         private int position; ///posicion

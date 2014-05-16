@@ -18,26 +18,36 @@ public class pruebaDB {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException {
 
-         HelperDAO hd = new HelperDAO("TST_AUTOMOVIL");
+        HelperDAO hd = new HelperDAO("TST_AUTOMOVIL");
+       
         
-        try {
-           
-            hd.setProcedureName("R_PRUEBA_BULK.r_prueba_ejecuta_prc"); ///nombre del stored
-            hd.setInParameter("hola");
-            hd.setInParameter("mundo");
-            hd.setInParameter(123);
-            hd.setOutString();
-            hd.executeProcedure();
-            hd.getString(4);
-
-        } catch (SQLException ex) {
-            Logger.getLogger(pruebaDB.class.getName()).log(Level.SEVERE, null, ex);
-        }finally{
-            hd.closeCall();
-            hd.close();
-        }
+        ////********funcion
+//        hd.setFunctionName("R_PRUEBA_BULK.busca_texto");    
+//        hd.setOutString(); ////de primero el parametro de entrada
+//        hd.setInParameter("epale ");
+//        hd.setInParameter("funcionó");
+//        hd.setInParameter(123);
+//        hd.executeFunction();
+//        ////*******stored 
+//        hd.setProcedureName("R_PRUEBA_BULK.r_prueba_ejecuta_prc");
+//        hd.setInParameter("hola");
+//        hd.setInParameter("señor");
+//        hd.setInParameter(123);
+//        hd.setOutString();
+//        hd.executeProcedure();
+        
+        
+        
+        hd.setColumn("modelo", "prueba2");
+        hd.setColumnWhere("id", 8);
+        hd.setColumnWhere("marca", "Volkswagen");
+        hd.update();
+        
+        
+        
+        
 
     }
 }

@@ -406,7 +406,7 @@ abstract class Database {
      *
      * @param query
      */
-    public void prepareCall(String query) {
+    protected void prepareCall(String query) {
         try {
             this.cstmt = this.dbc.prepareCall(query);
         } catch (SQLException ex) {
@@ -417,7 +417,7 @@ abstract class Database {
     /**
      * metodo que ejecuta un objeto Call
      */
-    public void executeCall() {
+    protected void executeCall() {
 
         try {
             this.cstmt.executeUpdate();
@@ -437,7 +437,7 @@ abstract class Database {
         }
     }
 
-    public void setStringInParam(Integer pos, String Cadena) {
+    protected void setStringInParam(Integer pos, String Cadena) {
         try {
 
             this.cstmt.setString(pos, Cadena);
@@ -447,7 +447,7 @@ abstract class Database {
         }
     }
 
-    public void setStringOutParam(Integer pos) {
+    protected void setStringOutParam(Integer pos) {
         try {
             this.cstmt.registerOutParameter(pos, Types.VARCHAR);
         } catch (SQLException ex) {
@@ -464,7 +464,7 @@ abstract class Database {
 
     }
 
-    public void setTimestampInParam(Integer pos, Date fecha) {
+    protected void setTimestampInParam(Integer pos, Date fecha) {
         try {
             this.cstmt.setTimestamp(pos, (fecha == null ? null : new java.sql.Timestamp(fecha.getTime())));
         } catch (SQLException ex) {
@@ -473,7 +473,7 @@ abstract class Database {
 
     }
 
-    public void setInteger(Integer pos, Integer Numero) {
+    protected void setInteger(Integer pos, Integer Numero) {
         try {
             this.pstmt.setInt(pos, Numero);
         } catch (SQLException ex) {
@@ -481,7 +481,7 @@ abstract class Database {
         }
     }
 
-    public void setIntegerInParam(Integer pos, Integer Numero) {
+    protected void setIntegerInParam(Integer pos, Integer Numero) {
         try {
             this.cstmt.setInt(pos, Numero);
         } catch (SQLException ex) {
@@ -600,7 +600,7 @@ abstract class Database {
         }
     }
 
-    public void setLongInParam(Integer pos, long Numero) {
+    protected void setLongInParam(Integer pos, long Numero) {
         try {
             this.cstmt.setLong(pos, Numero);
         } catch (SQLException ex) {
@@ -608,7 +608,7 @@ abstract class Database {
         }
     }
 
-    public void setLongOutParam(Integer pos) {
+    protected void setLongOutParam(Integer pos) {
         try {
             this.cstmt.registerOutParameter(pos, Types.BIGINT);
         } catch (SQLException ex) {
@@ -629,7 +629,7 @@ abstract class Database {
         }
     }
 
-    public void setFloatInParam(Integer pos, float Numero) {
+    protected void setFloatInParam(Integer pos, float Numero) {
         try {
             this.cstmt.setFloat(pos, Numero);
         } catch (SQLException ex) {
