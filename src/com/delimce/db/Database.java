@@ -37,10 +37,6 @@ abstract class Database {
     /////////////////////////////////////prepared vars
     protected PreparedStatement pstmt;
     //////////////////////VARIABLES PARA LA CONEXION
-//    private String dbserver = "10.16.44.139";
-//    private String dbuser = "postgres";
-//    private String dbpass = "12345";
-//
     private String dbserver;
     private String dbuser;
     private String dbpass;
@@ -423,7 +419,7 @@ abstract class Database {
             this.cstmt.executeUpdate();
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
-        } 
+        }
     }
 
     /**
@@ -516,8 +512,15 @@ abstract class Database {
      * @return
      * @throws SQLException
      */
-    public String getString(int pos) throws SQLException {
-        return this.cstmt.getString(pos);
+    public String getString(int pos) {
+
+        String output = "";
+        try {
+            output = this.cstmt.getString(pos);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return output;
     }
 
     /**
@@ -695,6 +698,11 @@ abstract class Database {
         }
     }
 
+    /**
+     * metodo diseñado para los insert en tablas que generan un ID autoincremental
+     * puede usarse para los demas por se debe capturar la excepcion
+     * @throws SQLException 
+     */
     public void tquery() throws SQLException {
 
         this.pstmt.executeUpdate();
@@ -704,6 +712,15 @@ abstract class Database {
             this.ultimoID = this.result.getLong(1);
         }
 
+    }
+
+    /**
+     * metodo diseñado para operaciones update y delete
+     * @throws SQLException 
+     */
+    public void tquerySimple() throws SQLException {
+
+        this.pstmt.executeUpdate();
     }
 
     public void query() throws SQLException {

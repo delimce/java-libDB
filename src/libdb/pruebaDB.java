@@ -6,13 +6,12 @@ package libdb;
 
 import com.delimce.db.HelperDAO;
 import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author luis
  */
+
 public class pruebaDB {
 
     /**

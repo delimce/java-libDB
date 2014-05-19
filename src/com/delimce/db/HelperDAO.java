@@ -7,7 +7,6 @@ package com.delimce.db;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import static java.util.Arrays.asList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -275,7 +274,7 @@ public class HelperDAO extends Database {
             for (i = 0; i < columnsWhere.size(); i++) {
                 setObject(valuesWhere.get(i), i + 1);
             }
-            tquery();
+            tquerySimple();
         } catch (SQLException ex) {
             Logger.getLogger(HelperDAO.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
@@ -313,7 +312,7 @@ public class HelperDAO extends Database {
                 System.out.println(mexcla.get(i));
                 setObject(mexcla.get(i), i + 1);
             }
-            tquery();
+             tquerySimple();
         } catch (SQLException ex) {
             Logger.getLogger(HelperDAO.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
